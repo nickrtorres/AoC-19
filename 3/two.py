@@ -9,7 +9,7 @@ directions = {
 
 
 def parse(input):
-    return [re.match(r'([RLDU])([0-9]+)', instruction).groups() for instruction in input.split(',')]
+    return (re.match(r'([RLDU])([0-9]+)', instruction).groups() for instruction in input.split(','))
 
 
 def get_points(input):
