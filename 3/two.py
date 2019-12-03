@@ -25,7 +25,7 @@ def get_points(input):
 def min_intersection(first, second):
     first = get_points(first)
     second = get_points(second)
-    return min([(first.index(point), second.index(point)) for point in set(first) & set(second) if point != (0, 0)], key=sum)
+    return min(((first.index(point), second.index(point)) for point in set(first) & set(second) if point != (0, 0)), key=sum)
 
 
 assert 30 == sum(min_intersection('R8,U5,L5,D3', 'U7,R6,D4,L4'))
