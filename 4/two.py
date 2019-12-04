@@ -2,7 +2,6 @@ import collections
 
 (min, max) = (234208, 765869)
 
-
 def meets_criteria(nums):
     seen = collections.defaultdict(int)
     cur, prev = 0, 0
