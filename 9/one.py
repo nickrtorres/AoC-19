@@ -1,3 +1,4 @@
+from ..intcode import IntCode
 import collections
 import itertools
 '''
