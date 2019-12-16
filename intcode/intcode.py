@@ -38,7 +38,7 @@ class IntCode:
                 modes = _split_modes(self.program[self.ip])
                 self._opcodes[modes[0]](self, modes)
             except IndexError:
-                self.program = self.program + [0 for i in range(self.program[self.ip] - len(self.program))]
+                self.program = self.program + [0 for _ in range(len(self.program))]
             except KeyError:
                 break
 
@@ -46,7 +46,10 @@ class IntCode:
         self.output_register = register
 
         if self.observer is not None:
-            self.observer(register)
+            self.output_queue.append(register)
+            if len(self.output_queue) == self.output_step:
+                self.observer(tuple(self.output_queue))
+                self.output_queue = []
 
 
     def _get_input(self):
@@ -54,7 +57,8 @@ class IntCode:
             return self.driver()
         return self.input_register
 
-    def __init__(self, program, observer=None, driver=None):
+
+    def __init__(self, program, observer=None, driver=None, output_step=1):
         self.program = program
         self.input_register = 0
         self.output_register = 0
@@ -62,7 +66,8 @@ class IntCode:
         self.relative_base = 0
         self.observer = observer
         self.driver = driver
-
+        self.output_queue = []
+        self.output_step = output_step
 
 
     def _register(self, modes, idx):
