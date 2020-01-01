@@ -70,10 +70,8 @@ YN......#               VT..#....QG
            U   P   P
 '''
 
-
 def _unreachable():
     raise RuntimeError("Something really bad happened. aborting now...")
-
 
 UP = 0
 DOWN = 1
@@ -154,9 +152,7 @@ def find_leafs(puzzle):
             if line[col] in alphas:
                 starts.append((row, col))
 
-    '''
-    A given starting point will be adjacent to one and only one '.'
-    '''
+    # A given starting point will be adjacent to one and only one '.'
     leafs = []
     for row, col in starts:
         cardinals = [(r, c) for r,c in [(row + 1, col), (row - 1, col), (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row and c >= 0 and c < upper_col]
@@ -206,7 +202,7 @@ class Node:
         if not isinstance(other, Node):
             return False
 
-        return self.name == other.name
+        return self.name == other.name and self.entry == other.entry
 
     def __hash__(self):
         return hash(self.entry) + hash(self.name)
@@ -214,8 +210,8 @@ class Node:
 def inverse_node(node, others):
     return next((n for n in others if n.name == node.name and n != node), None)
 
-# assert None != inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
-#assert Node(name='AB', entry=(0,0)) == inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
+assert None != inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
+assert Node(name='AB', entry=(0,0)) == inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
 
 def build(puzzle):
     puzzle_lines = puzzle.splitlines()
@@ -226,8 +222,6 @@ def build(puzzle):
     for leaf, name, cord  in find_leafs(puzzle):
         leaf_entry[leaf] = (name, cord)
         leafs.append((leaf, 0))
-
-
 
     costs = collections.defaultdict(list)
     while len(leafs) > 0:
@@ -249,13 +243,13 @@ def build(puzzle):
                         if (row, col) not in visited:
                             q.append(((row, col), cost + 1))
                     elif puzzle_lines[row][col] != WALL and (row, col) != leaf_entry[top][1]:
-                        found = Node(name=node_name(puzzle_lines, (row,col)))
+                        found = Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
                         try:
                             _ = nodes.index(found)
                         except ValueError:
                             nodes.append(found)
 
-                        n = Node(name=leaf_entry[top][0], neighbors=set([Path(end=found, path_cost=cost)]))
+                        n = Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([Path(end=found, path_cost=cost)]))
                         try:
                             idx = nodes.index(n)
                             nodes[idx] = n + nodes[idx]
@@ -295,7 +289,7 @@ assert search([1,2,3,4,5], lambda x: x == 2) == 1
 def dijkstra(nodes, start='AA', end='ZZ'):
     s = next((n for n in nodes if n.name == start), None)
     e = next((n for n in nodes if n.name == end), None)
-    others = dict((n.name, n) for n in nodes)
+    others = dict(((n.name, n.entry), n) for n in nodes)
 
     heap = []
     heapq.heappush(heap, Route(node=s, net_cost=0, via=None))
@@ -317,14 +311,40 @@ def dijkstra(nodes, start='AA', end='ZZ'):
                     heapq.heapify(heap)
 
             except ValueError:
-                heap.append(Route(node=others[path.end.name], net_cost=(path.path_cost + current.net_cost), via=current))
+                heap.append(Route(node=others[(path.end.name, path.end.entry)], net_cost=(path.path_cost + current.net_cost), via=current))
                 heapq.heapify(heap)
+
+        try:
+            for path in inverse_node(current.node, nodes).neighbors:
+                # teleporting incurs an overhead 1
+                overhead = 1
+                if path.end.name in visited:
+                    continue
+
+                try:
+                    idx = search(heap, lambda route: route.node == path.end)
+                    if heap[idx].net_cost > (path.path_cost + overhead + current.net_cost):
+                        heap[idx].net_cost = (path.path_cost + overhead + current.net_cost)
+                        heap[idx].via = current
+                        heapq.heapify(heap)
+
+                except ValueError:
+                    heap.append(Route(node=others[(path.end.name, path.end.entry)], net_cost=(path.path_cost + overhead + current.net_cost), via=current))
+                    heapq.heapify(heap)
+        except AttributeError:
+            pass
 
     return visited[end].net_cost
 
 
-# for node in build(SIMPLE_PUZZLE):
-#     print(node.name)
-#     for p in sorted(node.neighbors):
-#         print(f'\t {p.end.name} => {p.path_cost}')
-print(dijkstra(build(SIMPLE_PUZZLE)))
+#for node in build(SIMPLE_PUZZLE):
+#    print(node.name)
+#    for p in sorted(node.neighbors):
+#        print(f'\t {p.end.name} => {p.path_cost}')
+
+assert dijkstra(build(SIMPLE_PUZZLE)) == 23
+assert dijkstra(build(COMPLEX_PUZZLE)) == 58
+
+with open('input') as f:
+    puzzle = f.read()
+    print(dijkstra(build(puzzle)))
