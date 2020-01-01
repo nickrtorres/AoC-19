@@ -77,6 +77,7 @@ UP = 0
 DOWN = 1
 LEFT = 2
 RIGHT = 3
+
 def _neighbor_direction(og, neighbor):
     if neighbor[0] < og[0]:
         return LEFT
@@ -125,19 +126,23 @@ def node_name(puzzle_lines, known):
     prime = puzzle_lines[row][col]
 
     for neighbor in neighbors:
-        neighbor_alpha = puzzle_lines[neighbor[0]][neighbor[1]]
-        if neighbor_alpha in string.ascii_uppercase:
-            direction = _neighbor_direction(known, neighbor)
+        try:
+            neighbor_alpha = puzzle_lines[neighbor[0]][neighbor[1]]
+            if neighbor_alpha in string.ascii_uppercase:
+                direction = _neighbor_direction(known, neighbor)
 
-            if direction == UP or direction == LEFT:
-                return neighbor_alpha + puzzle_lines[row][col]
-            else:
-                return puzzle_lines[row][col] + neighbor_alpha
+                if direction == UP or direction == LEFT:
+                    return neighbor_alpha + puzzle_lines[row][col]
+                else:
+                    return puzzle_lines[row][col] + neighbor_alpha
+        except IndexError:
+            pass # this seems really bad
 
     _unreachable()
 
 assert 'BC' == node_name(SIMPLE_PUZZLE.splitlines() ,(7, 9))
 assert 'BC' == node_name(SIMPLE_PUZZLE.splitlines() ,(8, 1))
+assert 'AS' == node_name(COMPLEX_PUZZLE.splitlines() ,(17, 33))
 
 def find_leafs(puzzle):
     puzzle_lines = puzzle.splitlines()
@@ -184,7 +189,6 @@ class Path:
         if not isinstance(other, Path):
             return False
         return self.path_cost < other.path_cost
-
 
 class Node:
     def __init__(self, entry=(0,0), name='', neighbors=set()):
@@ -284,6 +288,7 @@ def search(l, f):
         if f(l[i]):
             return i
     raise ValueError
+
 assert search([1,2,3,4,5], lambda x: x == 2) == 1
 
 def dijkstra(nodes, start='AA', end='ZZ'):
@@ -336,13 +341,8 @@ def dijkstra(nodes, start='AA', end='ZZ'):
 
     return visited[end].net_cost
 
-
-# for node in build(COMPLEX_PUZZLE):
-#     print(node.name)
-#     for p in sorted(node.neighbors):
-#         print(f'\t {p.end.name} => {p.path_cost}')
-
 assert dijkstra(build(SIMPLE_PUZZLE)) == 23
+assert dijkstra(build(COMPLEX_PUZZLE)) == 58
 
 with open('input') as f:
     puzzle = f.read()
