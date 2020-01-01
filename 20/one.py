@@ -230,7 +230,6 @@ def build(puzzle):
         leaf_entry[leaf] = (name, cord)
         leafs.append((leaf, 0))
 
-    costs = collections.defaultdict(list)
     while len(leafs) > 0:
         top, _ = leafs[0]
         visited = set()
@@ -244,7 +243,6 @@ def build(puzzle):
                 continue
 
             for row, col in get_neighbors(puzzle_lines, current[0], current[1]):
-                costs[(row,col)].append(cost)
                 if puzzle_lines[row][col] == PATH:
                     if (row, col) not in visited:
                         q.append(((row, col), cost + 1))
