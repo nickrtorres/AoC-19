@@ -99,7 +99,21 @@ def get_neighbors(puzzle_lines, row, col):
     upper_row = len(puzzle_lines)
     upper_col = max((len(line) for line in puzzle_lines))
 
-    return [(r, c) for r,c in [(row + 1, col), (row - 1, col), (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row and c >= 0 and c < upper_col]
+    neighbors = ((r, c) for r,c in [(row + 1, col), (row - 1, col), (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row and c >= 0 and c < upper_col)
+
+    # only include the neighbors that actually exist in the map.
+    # that is, a coordinate is invalid if we step off the end of
+    # a row while validating a coordinate
+    valid_coordinates = []
+    for r, c in neighbors:
+        try:
+            puzzle_lines[r][c]
+            valid_coordinates.append((r,c))
+        except IndexError:
+            pass
+    return valid_coordinates
+
+
 
 def node_name(puzzle_lines, known):
     '''
