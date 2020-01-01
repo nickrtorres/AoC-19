@@ -113,8 +113,6 @@ def get_neighbors(puzzle_lines, row, col):
             pass
     return valid_coordinates
 
-
-
 def node_name(puzzle_lines, known):
     '''
     nodes are always read and stored top to bottom, left to right:
