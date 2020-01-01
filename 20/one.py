@@ -302,6 +302,8 @@ def dijkstra(nodes, start='AA', end='ZZ'):
         current = heapq.heappop(heap)
         visited[current.node.name] = current
 
+        # FIXME: remove duplicated block
+        # determine better way to handle teleporting case
         for path in current.node.neighbors:
             if path.end.name in visited:
                 continue
