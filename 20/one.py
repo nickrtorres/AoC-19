@@ -337,13 +337,12 @@ def dijkstra(nodes, start='AA', end='ZZ'):
     return visited[end].net_cost
 
 
-#for node in build(SIMPLE_PUZZLE):
-#    print(node.name)
-#    for p in sorted(node.neighbors):
-#        print(f'\t {p.end.name} => {p.path_cost}')
+# for node in build(COMPLEX_PUZZLE):
+#     print(node.name)
+#     for p in sorted(node.neighbors):
+#         print(f'\t {p.end.name} => {p.path_cost}')
 
 assert dijkstra(build(SIMPLE_PUZZLE)) == 23
-assert dijkstra(build(COMPLEX_PUZZLE)) == 58
 
 with open('input') as f:
     puzzle = f.read()
