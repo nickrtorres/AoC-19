@@ -140,17 +140,14 @@ def node_name(puzzle_lines, known):
     prime = puzzle_lines[row][col]
 
     for neighbor in neighbors:
-        try:
-            neighbor_alpha = puzzle_lines[neighbor[0]][neighbor[1]]
-            if neighbor_alpha in string.ascii_uppercase:
-                direction = _neighbor_direction(known, neighbor)
+        neighbor_alpha = puzzle_lines[neighbor[0]][neighbor[1]]
+        if neighbor_alpha in string.ascii_uppercase:
+            direction = _neighbor_direction(known, neighbor)
 
-                if direction == UP or direction == LEFT:
-                    return neighbor_alpha + puzzle_lines[row][col]
-                else:
-                    return puzzle_lines[row][col] + neighbor_alpha
-        except IndexError:
-            pass # this seems really bad
+            if direction == UP or direction == LEFT:
+                return neighbor_alpha + puzzle_lines[row][col]
+            else:
+                return puzzle_lines[row][col] + neighbor_alpha
 
     _unreachable()
 
@@ -167,22 +164,16 @@ def find_leafs(puzzle):
     alphas = set(string.ascii_uppercase)
     for row, line in enumerate(puzzle_lines):
         for col in range(len(line)):
-
             if line[col] in alphas:
                 starts.append((row, col))
 
     # A given starting point will be adjacent to one and only one '.'
     leafs = []
     for row, col in starts:
-        cardinals = [(r, c) for r,c in [(row + 1, col), (row - 1, col), (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row and c >= 0 and c < upper_col]
+        cardinals = get_neighbors(puzzle_lines, row, col)
         for dir in cardinals:
-            try:
-                if puzzle_lines[dir[0]][dir[1]] == '.':
-                    leafs.append((dir, node_name(puzzle_lines, (row, col)), (row, col)))
-            except IndexError:
-                # stepped off the end of an incomplete row.
-                # we don't really care about this state (i think)
-                pass
+            if puzzle_lines[dir[0]][dir[1]] == '.':
+                leafs.append((dir, node_name(puzzle_lines, (row, col)), (row, col)))
     return leafs
 
 class Path:
@@ -256,27 +247,22 @@ def build(puzzle):
 
             for row, col in get_neighbors(puzzle_lines, current[0], current[1]):
                 costs[(row,col)].append(cost)
-                try:
-                    if puzzle_lines[row][col] == PATH:
-                        if (row, col) not in visited:
-                            q.append(((row, col), cost + 1))
-                    elif puzzle_lines[row][col] != WALL and (row, col) != leaf_entry[top][1]:
-                        found = Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
-                        try:
-                            _ = nodes.index(found)
-                        except ValueError:
-                            nodes.append(found)
+                if puzzle_lines[row][col] == PATH:
+                    if (row, col) not in visited:
+                        q.append(((row, col), cost + 1))
+                elif puzzle_lines[row][col] != WALL and (row, col) != leaf_entry[top][1]:
+                    found = Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
+                    try:
+                        _ = nodes.index(found)
+                    except ValueError:
+                        nodes.append(found)
 
-                        n = Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([Path(end=found, path_cost=cost)]))
-                        try:
-                            idx = nodes.index(n)
-                            nodes[idx] = n + nodes[idx]
-                        except ValueError:
-                            nodes.append(n)
-                except IndexError:
-                    # (again) stepped off the end of an incomplete row.
-                    # we don't really care about this state (i think)
-                    pass
+                    n = Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([Path(end=found, path_cost=cost)]))
+                    try:
+                        idx = nodes.index(n)
+                        nodes[idx] = n + nodes[idx]
+                    except ValueError:
+                        nodes.append(n)
 
     return nodes
 
