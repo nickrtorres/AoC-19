@@ -7,8 +7,6 @@ import data
 
 PATH = '.'
 WALL = '#'
-BLANK = ' '
-EMPTY = ''
 
 SIMPLE_PUZZLE = '''\
          A
@@ -232,6 +230,24 @@ def search(l, f):
 
 assert search([1,2,3,4,5], lambda x: x == 2) == 1
 
+def process(current=data.Route(), path=data.Path(), heap=[], overhead=0, o=dict()):
+    try:
+        idx = search(heap, lambda route: route.node== path.end)
+        if heap[idx].net_cost > (path.path_cost + overhead + current.net_cost):
+            heap[idx].net_cost = (path.path_cost + overhead + current.net_cost)
+            heap[idx].via = current
+            heapq.heapify(heap)
+
+    except ValueError:
+            heap.append(data.Route(node=o[(path.end.name, path.end.entry)], net_cost=(path.path_cost + overhead + current.net_cost), via=current))
+            heapq.heapify(heap)
+
+def _dijkstra_debug(visited, end='ZZ'):
+    bt = visited[end]
+    while bt != None:
+        print(f'node => {bt.node.name}; net_cost => {bt.net_cost}')
+        bt = bt.via
+
 def dijkstra(nodes, start='AA', end='ZZ'):
     s = next((n for n in nodes if n.name == start), None)
     e = next((n for n in nodes if n.name == end), None)
@@ -245,42 +261,16 @@ def dijkstra(nodes, start='AA', end='ZZ'):
         current = heapq.heappop(heap)
         visited[current.node.name] = current
 
-        # FIXME: remove duplicated block
-        # determine better way to handle teleporting case
         for path in current.node.neighbors:
-            if path.end.name in visited:
-                continue
+            if path.end.name not in visited:
+                process(current=current, path=path, heap=heap, overhead=0, o=others)
 
-            try:
-                idx = search(heap, lambda route: route.node.name == path.end.name)
-                if heap[idx].net_cost > (path.path_cost + current.net_cost):
-                    heap[idx].net_cost = (path.path_cost + current.net_cost)
-                    heap[idx].via = current
-                    heapq.heapify(heap)
+        for path in inverse_node(current.node, nodes).neighbors:
+            if path.end.name not in visited:
+                process(current=current, path=path, heap=heap, overhead=1, o=others)
 
-            except ValueError:
-                heap.append(Route(node=others[(path.end.name, path.end.entry)], net_cost=(path.path_cost + current.net_cost), via=current))
-                heapq.heapify(heap)
-
-        try:
-            for path in inverse_node(current.node, nodes).neighbors:
-                # teleporting incurs an overhead 1
-                overhead = 1
-                if path.end.name in visited:
-                    continue
-
-                try:
-                    idx = search(heap, lambda route: route.node == path.end)
-                    if heap[idx].net_cost > (path.path_cost + overhead + current.net_cost):
-                        heap[idx].net_cost = (path.path_cost + overhead + current.net_cost)
-                        heap[idx].via = current
-                        heapq.heapify(heap)
-
-                except ValueError:
-                    heap.append(Route(node=others[(path.end.name, path.end.entry)], net_cost=(path.path_cost + overhead + current.net_cost), via=current))
-                    heapq.heapify(heap)
-        except AttributeError:
-            pass
+    if __debug__:
+        _dijkstra_debug(visited)
 
     return visited[end].net_cost
 
