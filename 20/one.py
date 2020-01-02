@@ -3,6 +3,8 @@ import string
 import collections
 import re
 
+import data
+
 PATH = '.'
 WALL = '#'
 BLANK = ' '
@@ -174,51 +176,11 @@ def find_leafs(puzzle):
                 leafs.append((dir, node_name(puzzle_lines, (row, col)), (row, col)))
     return leafs
 
-class Path:
-    def __init__(self, end=None, path_cost=0):
-        self.end = end
-        self.path_cost = path_cost
-
-    def __eq__(self, other):
-        if not isinstance(other, Path):
-            return false
-
-        return self.end == other.end and self.path_cost == other.path_cost
-
-    def __hash__(self):
-        return hash(self.end) + hash(self.path_cost)
-
-    def __lt__(self, other):
-        if not isinstance(other, Path):
-            return False
-        return self.path_cost < other.path_cost
-
-class Node:
-    def __init__(self, entry=(0,0), name='', neighbors=set()):
-        self.entry = entry
-        self.name = name
-        self.neighbors = neighbors
-
-    def __add__(self, other):
-        if not isinstance(other, Node):
-            raise RuntimeError("invalid operand")
-
-        return Node(name=self.name, entry=self.entry, neighbors=self.neighbors.union(other.neighbors))
-
-    def __eq__(self, other):
-        if not isinstance(other, Node):
-            return False
-
-        return self.name == other.name and self.entry == other.entry
-
-    def __hash__(self):
-        return hash(self.entry) + hash(self.name)
-
 def inverse_node(node, others):
-    return next((n for n in others if n.name == node.name and n != node), None)
+    return next((n for n in others if n.name == node.name and n != node), data.Node())
 
-assert None != inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
-assert Node(name='AB', entry=(0,0)) == inverse_node(Node(name='AB', entry=(1,1)), [Node(name='AB', entry=(0,0)), Node(name='AB', entry=(1,1))])
+assert data.Node() != inverse_node(data.Node(name='AB', entry=(1,1)), [data.Node(name='AB', entry=(0,0)), data.Node(name='AB', entry=(1,1))])
+assert data.Node(name='AB', entry=(0,0)) == inverse_node(data.Node(name='AB', entry=(1,1)), [data.Node(name='AB', entry=(0,0)), data.Node(name='AB', entry=(1,1))])
 
 def build(puzzle):
     puzzle_lines = puzzle.splitlines()
@@ -247,13 +209,13 @@ def build(puzzle):
                     if (row, col) not in visited:
                         q.append(((row, col), cost + 1))
                 elif puzzle_lines[row][col] != WALL and (row, col) != leaf_entry[top][1]:
-                    found = Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
+                    found = data.Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
                     try:
                         _ = nodes.index(found)
                     except ValueError:
                         nodes.append(found)
 
-                    n = Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([Path(end=found, path_cost=cost)]))
+                    n = data.Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([data.Path(end=found, path_cost=cost)]))
                     try:
                         idx = nodes.index(n)
                         nodes[idx] = n + nodes[idx]
@@ -261,23 +223,6 @@ def build(puzzle):
                         nodes.append(n)
 
     return nodes
-
-class Route:
-    def __init__(self, node=None, net_cost=0, via=None):
-        self.node = node
-        self.net_cost = net_cost
-        self.via = via
-
-    def __eq__(self, other):
-        if not isinstance(other, Route):
-            return False
-        return self.node == other.node
-
-    def __lt__(self, other):
-        if not isinstance(other, Route):
-            return False
-
-        return self.net_cost < other.net_cost
 
 def search(l, f):
     for i in range(len(l)):
@@ -293,7 +238,7 @@ def dijkstra(nodes, start='AA', end='ZZ'):
     others = dict(((n.name, n.entry), n) for n in nodes)
 
     heap = []
-    heapq.heappush(heap, Route(node=s, net_cost=0, via=None))
+    heapq.heappush(heap, data.Route(node=s, net_cost=0, via=None))
 
     visited = { start: s }
     while len(heap) != 0:
