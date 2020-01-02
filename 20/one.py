@@ -99,7 +99,9 @@ def get_neighbors(puzzle_lines, row, col):
     upper_row = len(puzzle_lines)
     upper_col = max((len(line) for line in puzzle_lines))
 
-    neighbors = ((r, c) for r,c in [(row + 1, col), (row - 1, col), (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row and c >= 0 and c < upper_col)
+    neighbors = ((r, c) for r,c in [(row + 1, col), (row - 1, col),
+                 (row, col - 1), (row, col + 1)] if r >= 0  and r < upper_row
+                 and c >= 0 and c < upper_col)
 
     # only include the neighbors that actually exist in the map.
     # that is, a coordinate is invalid if we step off the end of
@@ -144,8 +146,10 @@ def node_name(puzzle_lines, known):
 
             if direction == UP or direction == LEFT:
                 return neighbor_alpha + puzzle_lines[row][col]
-            else:
+            elif direction == DOWN or direction == RIGHT:
                 return puzzle_lines[row][col] + neighbor_alpha
+            else:
+                _unreachable()
 
     _unreachable()
 
@@ -171,14 +175,21 @@ def find_leafs(puzzle):
         cardinals = get_neighbors(puzzle_lines, row, col)
         for dir in cardinals:
             if puzzle_lines[dir[0]][dir[1]] == '.':
-                leafs.append((dir, node_name(puzzle_lines, (row, col)), (row, col)))
+                leafs.append((dir, node_name(puzzle_lines,
+                             (row, col)), (row, col)))
     return leafs
 
 def inverse_node(node, others):
-    return next((n for n in others if n.name == node.name and n != node), data.Node())
+    return next((n for n in others
+                if n.name == node.name and n != node), data.Node())
 
-assert data.Node() != inverse_node(data.Node(name='AB', entry=(1,1)), [data.Node(name='AB', entry=(0,0)), data.Node(name='AB', entry=(1,1))])
-assert data.Node(name='AB', entry=(0,0)) == inverse_node(data.Node(name='AB', entry=(1,1)), [data.Node(name='AB', entry=(0,0)), data.Node(name='AB', entry=(1,1))])
+assert data.Node() != inverse_node(data.Node(name='AB', entry=(1,1)),
+                      [data.Node(name='AB', entry=(0,0)),
+                       data.Node(name='AB', entry=(1,1))])
+assert data.Node(name='AB', entry=(0,0)) == inverse_node(data.Node(name='AB',
+                                            entry=(1,1)), [data.Node(name='AB',
+                                            entry=(0,0)), data.Node(name='AB',
+                                            entry=(1,1))])
 
 def build(puzzle):
     puzzle_lines = puzzle.splitlines()
@@ -206,14 +217,19 @@ def build(puzzle):
                 if puzzle_lines[row][col] == PATH:
                     if (row, col) not in visited:
                         q.append(((row, col), cost + 1))
-                elif puzzle_lines[row][col] != WALL and (row, col) != leaf_entry[top][1]:
-                    found = data.Node(name=node_name(puzzle_lines, (row,col)), entry=(row,col))
+                elif all((puzzle_lines[row][col] != WALL,
+                         (row, col) != leaf_entry[top][1])):
+                    found = data.Node(name=node_name(puzzle_lines, (row,col)),
+                                      entry=(row,col))
                     try:
                         _ = nodes.index(found)
                     except ValueError:
                         nodes.append(found)
 
-                    n = data.Node(name=leaf_entry[top][0], entry=leaf_entry[top][1], neighbors=set([data.Path(end=found, path_cost=cost)]))
+                    n = data.Node(name=leaf_entry[top][0],
+                                  entry=leaf_entry[top][1],
+                                  neighbors=set([data.Path(end=found,
+                                                           path_cost=cost)]))
                     try:
                         idx = nodes.index(n)
                         nodes[idx] = n + nodes[idx]
@@ -230,7 +246,8 @@ def search(l, f):
 
 assert search([1,2,3,4,5], lambda x: x == 2) == 1
 
-def process(current=data.Route(), path=data.Path(), heap=[], overhead=0, o=dict()):
+def process(current=data.Route(), path=data.Path(), heap=[],
+            overhead=0, o=dict()):
     try:
         idx = search(heap, lambda route: route.node== path.end)
         if heap[idx].net_cost > (path.path_cost + overhead + current.net_cost):
@@ -239,7 +256,9 @@ def process(current=data.Route(), path=data.Path(), heap=[], overhead=0, o=dict(
             heapq.heapify(heap)
 
     except ValueError:
-            heap.append(data.Route(node=o[(path.end.name, path.end.entry)], net_cost=(path.path_cost + overhead + current.net_cost), via=current))
+            heap.append(data.Route(node=o[(path.end.name, path.end.entry)],
+                        net_cost=(path.path_cost + overhead + current.net_cost),
+                        via=current))
             heapq.heapify(heap)
 
 def _dijkstra_debug(visited, end='ZZ'):
@@ -263,11 +282,13 @@ def dijkstra(nodes, start='AA', end='ZZ'):
 
         for path in current.node.neighbors:
             if path.end.name not in visited:
-                process(current=current, path=path, heap=heap, overhead=0, o=others)
+                process(current=current, path=path, heap=heap,
+                        overhead=0, o=others)
 
         for path in inverse_node(current.node, nodes).neighbors:
             if path.end.name not in visited:
-                process(current=current, path=path, heap=heap, overhead=1, o=others)
+                process(current=current, path=path, heap=heap,
+                        overhead=1, o=others)
 
     if __debug__:
         _dijkstra_debug(visited)
