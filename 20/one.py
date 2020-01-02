@@ -202,7 +202,7 @@ def build(puzzle):
             else:
                 continue
 
-            for row, col in get_neighbors(puzzle_lines, current[0], current[1]):
+            for row, col in get_neighbors(puzzle_lines, *current):
                 if puzzle_lines[row][col] == PATH:
                     if (row, col) not in visited:
                         q.append(((row, col), cost + 1))
