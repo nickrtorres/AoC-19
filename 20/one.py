@@ -106,14 +106,12 @@ def get_neighbors(puzzle_lines, row, col):
     # only include the neighbors that actually exist in the map.
     # that is, a coordinate is invalid if we step off the end of
     # a row while validating a coordinate
-    valid_coordinates = []
     for r, c in neighbors:
         try:
             puzzle_lines[r][c]
-            valid_coordinates.append((r,c))
+            yield (r, c)
         except IndexError:
             pass
-    return valid_coordinates
 
 def node_name(puzzle_lines, known):
     '''
@@ -136,10 +134,9 @@ def node_name(puzzle_lines, known):
         #
     '''
     row, col = known
-    neighbors = get_neighbors(puzzle_lines, row, col)
     prime = puzzle_lines[row][col]
 
-    for neighbor in neighbors:
+    for neighbor in get_neighbors(puzzle_lines, row, col):
         neighbor_alpha = puzzle_lines[neighbor[0]][neighbor[1]]
         if neighbor_alpha in string.ascii_uppercase:
             direction = _neighbor_direction(known, neighbor)
@@ -170,14 +167,10 @@ def find_leafs(puzzle):
                 starts.append((row, col))
 
     # A given starting point will be adjacent to one and only one '.'
-    leafs = []
     for row, col in starts:
-        cardinals = get_neighbors(puzzle_lines, row, col)
-        for dir in cardinals:
+        for dir in get_neighbors(puzzle_lines, row, col):
             if puzzle_lines[dir[0]][dir[1]] == '.':
-                leafs.append((dir, node_name(puzzle_lines,
-                             (row, col)), (row, col)))
-    return leafs
+                yield (dir, node_name(puzzle_lines, (row, col)), (row, col))
 
 def inverse_node(node, others):
     return next((n for n in others
